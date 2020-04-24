@@ -1,0 +1,116 @@
+---
+title: "Reproducible Research: Peer Assessment 1"
+author: "leighgoodenough"
+date: "22/04/2020"
+output: html_document
+keep_md: true
+---
+
+```{r setup, include=TRUE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Loading and preprocessing the data
+
+1. Code for reading in the dataset and/or processing the data
+
+```{r project1_1}
+## setwd("5. Reproducible Research/Quizzes/Project 1")
+act <- read.csv("activity.csv")
+```
+
+## What is mean total number of steps taken per day?
+
+2. Histogram of the total number of steps taken each day
+
+```{r project1_2}
+library(ggplot2)
+ggplot(act, aes(date, steps)) + geom_col() + scale_x_discrete(labels=NULL) + labs(title="Steps per Day") 
+```
+
+3. Mean and median number of steps taken each day
+
+```{r project1_3}
+act1 <- split(act, list(act$date))
+act1 <- unlist(lapply(act1, function(x) sum(x[, "steps"])))
+mean(act1, na.rm=TRUE)
+median(act1, na.rm=TRUE)
+```
+
+## What is the average daily activity pattern?
+
+4. Time series plot of the average number of steps taken
+
+```{r project1_4}
+act[,"interval"]<-factor(act[,"interval"])
+act2 <- split(act, list(act$interval))
+act2 <- lapply(act2, function(x) mean(x[, "steps"], na.rm=TRUE))
+plot(act$interval, act2[act$interval], type="l", xlab="time of day (5 min. interval)", ylab="ave. no. of steps")
+```
+
+5. The 5-minute interval that, on average, contains the maximum number of steps
+
+```{r project1_5}
+act2a <- unlist(act2)
+n <- which.max(act2a)
+act2a[n]
+```
+
+## Imputing missing values
+
+6. Code to describe and show a strategy for imputing missing data
+
+```{r project1_6}
+## Calculate number of missing values (na) in dataframe
+sum(is.na(act))
+sum(is.na(act$steps))
+## Create new database to contain imputed values
+act3 <- act
+## Impute mean steps per interval to replace na values
+namean <- function(x) replace(x, is.na(x), mean(x, na.rm = TRUE))
+act3[] <- lapply(act3, namean)
+```
+
+7. Histogram of the total number of steps taken each day after missing values 
+are imputed (plus mean, median, and time series plot of average steps per interval)
+
+```{r project1_7}
+## Histogram of total steps per day after missing values are imputed
+ggplot(act3, aes(date, steps)) + geom_col() + scale_x_discrete(labels=NULL) + labs(title="Steps per Day")
+## Mean and median steps per day after missing values are imputed
+act3a <- split(act3, list(act3$date))
+act3a <- unlist(lapply(act3a, function(x) sum(x[, "steps"])))
+mean(act3a)
+median(act3a)
+## Time series plot of average steps per interval after missing values are imputed
+act3[,"interval"]<-factor(act3[,"interval"])
+act3b <- split(act3, list(act3$interval))
+act3b <- lapply(act3b, function(x) mean(x[, "steps"]))
+plot(act3$interval, act3b[act3$interval], type="l", xlab="time of day (5 min. interval)", ylab="ave. no. of steps")
+```
+
+## Are there differences in activity patterns between weekdays and weekends?
+
+8. Panel plot comparing the average number of steps taken per 5-minute interval 
+across weekdays and weekends
+
+```{r project1_8}
+## Convert date column to class "Date"
+library(chron)
+act3$date <- as.Date(act3$date)
+## Create weekday/weekend factor in dataframe
+act3$weekend <- factor(ifelse(is.weekend(act3$date), "weekend", "weekday"))
+## Prepare data for plotting - comparing weekday data to weekend data
+act4a <- subset(act3, act3$weekend=="weekday")
+act4aa <- split(act4a, list(act4a$interval))
+act4aa <- lapply(act4aa, function(x) mean(x[, "steps"]))
+act4b <- subset(act3, act3$weekend=="weekend")
+act4bb <- split(act4b, list(act4b$interval))
+act4bb <- lapply(act4bb, function(x) mean(x[, "steps"]))
+## Plot weekday/weekend average steps data
+par(mfrow=c(1,2))
+plot(act4a$interval, act4aa[act4a$interval], type="l", xlab="time of day (5 min. interval)", ylab="ave. no. of steps", main = "Weekday")
+plot(act4b$interval, act4bb[act4b$interval], type="l", xlab="time of day (5 min. interval)", ylab="ave. no. of steps", main = "Weekend")
+```
+
+9. All of the R code needed to reproduce the results (numbers, plots, etc.) in the report is outlined above :)
